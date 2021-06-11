@@ -25,4 +25,26 @@
         android:textSize="20dp" />
 
 
+    <Button
+        android:id="@+id/btn2"
+        android:layout_width="300dp"
+        android:layout_height="68dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:text="save"
+        android:textSize="20dp" />
+
+
+    <TextView
+        android:id="@+id/tone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn2"
+        android:layout_alignParentRight="true"
+        android:background="@color/purple_200"
+        android:text="next page"
+        android:textColor="@color/black"
+        android:textStyle="bold" />
+
+
 </RelativeLayout>
