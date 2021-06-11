@@ -1,13 +1,13 @@
 package com.mahdi.pickgallery;
 
 
-import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -33,8 +33,6 @@ public class MainActivity extends AppCompatActivity {
     private Button button1, button2;
     private ImageView imageView;
     private TextView textView;
-    private int Request_File = 1;
-    private int Request_Storage = 111;
     private Uri uri;
     private String stringPath;
     private OutputStream outputStream;
@@ -62,69 +60,72 @@ public class MainActivity extends AppCompatActivity {
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, Request_Storage);
-                } else {
-                    selectImage();
-                }
-
+                resultLauncher.launch(selectImage());
             }
         });
     }
 
 
-    private void selectImage() {
+    private Intent selectImage() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType("image/*");
-        startActivityForResult(intent, Request_File);
+        return intent;
+        //startActivityForResult(intent, Request_File);
     }
 
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
 
 
-        if (requestCode == Request_File && resultCode == RESULT_OK && data != null && data.getData() != null) {
+    ActivityResultLauncher<Intent> resultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+        @Override
+        public void onActivityResult(ActivityResult result) {
+
+            if (result.getResultCode() == Activity.RESULT_OK) {
+                Intent intent = result.getData();
 
 
-            File filepath = Environment.getExternalStorageDirectory();
-            File dir = new File(filepath.getAbsolutePath() + "/lib/");
-            dir.mkdirs();
-            File file = new File(dir, "one.JPEG");
+                File filepath = Environment.getExternalStorageDirectory();
+                File dir = new File(filepath.getAbsolutePath() + "/lib/");
+                dir.mkdirs();
+                File file = new File(dir, "one.JPEG");
 
-            uri = data.getData();
-            getStringPath(uri);
+                uri = intent.getData();
+                getStringPath(uri);
 
 
-            InputStream inputStream = null;
-            try {
-                inputStream = getContentResolver().openInputStream(uri);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                InputStream inputStream = null;
+                try {
+                    inputStream = getContentResolver().openInputStream(uri);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                imageView.setImageBitmap(bitmap);
+
+                button2.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        outputStream = null;
+
+                        try {
+                            outputStream = new FileOutputStream(file);
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+                            Toast.makeText(MainActivity.this, "save", Toast.LENGTH_SHORT).show();
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
             }
-
-
-
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            imageView.setImageBitmap(bitmap);
-
-            outputStream = null;
-
-
-            try {
-                outputStream = new FileOutputStream(file);
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-                Toast.makeText(MainActivity.this, "save", Toast.LENGTH_SHORT).show();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-
         }
-    }
+    });
+
+
+
 
 
     public String getStringPath(Uri uriN) {
@@ -140,6 +141,8 @@ public class MainActivity extends AppCompatActivity {
         }
         return stringPath;
     }
+
+
 
 
 }
